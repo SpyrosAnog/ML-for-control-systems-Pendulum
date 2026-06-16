@@ -16,7 +16,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 SEED = 7
 EPISODE_STEPS = 300
 DEFAULT_SIMULATION_STEPS = 1200
-MODEL_PATH = Path("a2c_unbalanced_disk_long")
+MODEL_PATH = Path("a2c_unbalanced_disk_long1")
 REWARD_WEIGHTS = {
     "swing_up": 0.5,
     "capture": 8.0,
