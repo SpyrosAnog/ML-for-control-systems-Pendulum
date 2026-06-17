@@ -31,6 +31,7 @@ SEED = 7
 EPISODE_STEPS = 300
 DEFAULT_SIMULATION_STEPS = 1200
 ALGORITHM = "PPO"  # switch to "A2C" to use the original A2C setup
+OBS_NOISE_OMEGA = 0.1  # rad/s std dev added to obs[2] during sim training
 
 # Reference range: ±15° around the upright (π rad)
 REF_RANGE_DEG = 15.0
@@ -86,7 +87,7 @@ PPO_HYPERPARAMS = {
 
 MODEL_PATHS = {
     "A2C": Path("a2c_ref_track_v2"),
-    "PPO": Path("ppo_ref_track_v2"),
+    "PPO": Path("ppo_ref_track_noise_01"),
 }
 
 
@@ -120,7 +121,7 @@ TRAIN_HYPERPARAMS = default_hyperparams()
 
 ROBUSTNESS = {
     "action_delay":    0,
-    "obs_noise_omega": 0.0,
+    "obs_noise_omega": OBS_NOISE_OMEGA,
 }
 
 
@@ -303,9 +304,16 @@ class DiskRefTrackEnv(gym.Env):
 
 
 # ── training helpers ──────────────────────────────────────────────────────────
-def make_env(seed: int = SEED, max_episode_steps: int = EPISODE_STEPS):
+def make_env(
+    seed: int = SEED,
+    max_episode_steps: int = EPISODE_STEPS,
+    obs_noise_omega: float = OBS_NOISE_OMEGA,
+):
     def _init():
-        env = DiskRefTrackEnv(max_episode_steps=max_episode_steps)
+        env = DiskRefTrackEnv(
+            max_episode_steps=max_episode_steps,
+            obs_noise_omega=obs_noise_omega,
+        )
         env = Monitor(env)
         env.reset(seed=seed)
         return env
@@ -373,9 +381,10 @@ def rollout(
     theta_ref_deg: float = 0.0,   # offset from upright in degrees (0 = pure upright)
     deterministic: bool = True,
     render: bool = False,
+    obs_noise_omega: float = 0.0,
 ):
     """Run one episode with a fixed reference angle for evaluation."""
-    env = DiskRefTrackEnv(max_episode_steps=max_steps)
+    env = DiskRefTrackEnv(max_episode_steps=max_steps, obs_noise_omega=obs_noise_omega)
     env.theta_ref = np.pi + np.deg2rad(theta_ref_deg)   # fix reference for eval
     obs, _ = env.reset(seed=SEED + 1)
     env.theta_ref = np.pi + np.deg2rad(theta_ref_deg)   # override after reset

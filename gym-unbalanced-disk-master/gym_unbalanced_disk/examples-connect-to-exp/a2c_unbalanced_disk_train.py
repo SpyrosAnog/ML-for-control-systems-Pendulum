@@ -16,13 +16,14 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 SEED = 7
 EPISODE_STEPS = 300
 DEFAULT_SIMULATION_STEPS = 1200
-MODEL_PATH = Path("a2c_unbalanced_disk_long1")
+MODEL_PATH = Path("a2c_unbalanced_disk_noise_omega_01")
+OBS_NOISE_OMEGA = 0.1 # rad/s std dev added to obs[2] during sim training/evaluation
 REWARD_WEIGHTS = {
     "swing_up": 0.5,
-    "capture": 8.0,
-    "top_speed_penalty": 1.0,
-    "omega_penalty": 0.02,
-    "action_penalty": 0.005,
+    "capture": 12.0,
+    "top_speed_penalty": 1.5,
+    "omega_penalty": 0.03,
+    "action_penalty": 0.001,
     "stall_penalty": 0.5,
 }
 
@@ -50,8 +51,8 @@ def external_balance_reward(theta: float, omega: float, action: float, umax: flo
 
     swing_up_reward = ((1.0 - np.cos(theta_wrapped)) / 2.0) ** 2
     top_gate = np.exp(-(upright_error**2) / (2 * 0.35**2))
-    capture_bonus = np.exp(-(upright_error**2) / (2 * 0.25**2)) * np.exp(
-        -(omega**2) / (2 * 1.5**2)
+    capture_bonus = np.exp(-(upright_error**2) / (2 * 0.12**2)) * np.exp(
+        -(omega**2) / (2 * 1.0**2)
     )
     top_speed_penalty = top_gate * (omega / 8.0) ** 2
     omega_penalty = (omega / 10.0) ** 2
@@ -71,9 +72,16 @@ def external_balance_reward(theta: float, omega: float, action: float, umax: flo
 class DiskSB3Env(gym.Env):
     metadata = {"render_modes": ["human"]}
 
-    def __init__(self, dt: float = 0.025, umax: float = 3.0, max_episode_steps: int = EPISODE_STEPS):
+    def __init__(
+        self,
+        dt: float = 0.025,
+        umax: float = 3.0,
+        max_episode_steps: int = EPISODE_STEPS,
+        obs_noise_omega: float = OBS_NOISE_OMEGA,
+    ):
         super().__init__()
         self.umax = umax
+        self.obs_noise_omega = obs_noise_omega
         self.env = gym.make(
             "unbalanced-disk-sincos-v0",
             dt=dt,
@@ -95,11 +103,17 @@ class DiskSB3Env(gym.Env):
         )
         self.observation_space = self.env.observation_space
 
+    def _add_observation_noise(self, obs: np.ndarray) -> np.ndarray:
+        obs = obs.astype(np.float32).copy()
+        if self.obs_noise_omega > 0.0:
+            obs[2] += np.random.normal(0.0, self.obs_noise_omega)
+        return obs
+
     def reset(self, seed=None, options=None):
         if seed is not None:
             np.random.seed(seed)
         obs, info = self.env.reset(seed=seed, options=options)
-        return obs.astype(np.float32), info
+        return self._add_observation_noise(obs), info
 
     def step(self, action):
         u = float(np.asarray(action, dtype=np.float32).reshape(-1)[0])
@@ -120,7 +134,7 @@ class DiskSB3Env(gym.Env):
             "env_reward": float(env_reward),
             "train_reward": float(train_reward),
         }
-        return obs.astype(np.float32), float(train_reward), terminated, truncated, info
+        return self._add_observation_noise(obs), float(train_reward), terminated, truncated, info
 
     def render(self):
         return self.env.render()
@@ -129,9 +143,13 @@ class DiskSB3Env(gym.Env):
         self.env.close()
 
 
-def make_env(seed: int = SEED, max_episode_steps: int = EPISODE_STEPS):
+def make_env(
+    seed: int = SEED,
+    max_episode_steps: int = EPISODE_STEPS,
+    obs_noise_omega: float = OBS_NOISE_OMEGA,
+):
     def _init():
-        env = DiskSB3Env(max_episode_steps=max_episode_steps)
+        env = DiskSB3Env(max_episode_steps=max_episode_steps, obs_noise_omega=obs_noise_omega)
         env = Monitor(env)
         env.reset(seed=seed)
         return env
@@ -162,8 +180,14 @@ def build_model(env, device: str, entropy_coef: float) -> A2C:
     )
 
 
-def rollout(model: A2C, max_steps: int, deterministic: bool = True, render: bool = False):
-    env = DiskSB3Env(max_episode_steps=max_steps)
+def rollout(
+    model: A2C,
+    max_steps: int,
+    deterministic: bool = True,
+    render: bool = False,
+    obs_noise_omega: float = 0.0,
+):
+    env = DiskSB3Env(max_episode_steps=max_steps, obs_noise_omega=obs_noise_omega)
     obs, _ = env.reset(seed=SEED + 1)
     rewards, actions, infos = [], [], []
     try:
@@ -191,6 +215,7 @@ def main() -> None:
     parser.add_argument("--device", choices=["cpu", "cuda"], default="cpu")
     parser.add_argument("--render", action="store_true")
     parser.add_argument("--simulation-steps", type=int, default=DEFAULT_SIMULATION_STEPS)
+    parser.add_argument("--obs-noise-omega", type=float, default=OBS_NOISE_OMEGA)
     parser.add_argument("--progress", action="store_true", help="Show SB3 progress bar during training.")
     args = parser.parse_args()
 
@@ -207,10 +232,11 @@ def main() -> None:
     print(f"episode steps: {args.episode_steps}")
     print(f"total timesteps: {total_timesteps:,}")
     print(f"entropy coefficient: {args.entropy_coef}")
+    print(f"omega observation noise std: {args.obs_noise_omega}")
     print(f"reward weights: {REWARD_WEIGHTS}")
     print("training...")
 
-    train_env = DummyVecEnv([make_env(SEED, args.episode_steps)])
+    train_env = DummyVecEnv([make_env(SEED, args.episode_steps, args.obs_noise_omega)])
     model = build_model(train_env, args.device, args.entropy_coef)
     start = time.perf_counter()
     model.learn(total_timesteps=total_timesteps, progress_bar=args.progress)
@@ -225,6 +251,7 @@ def main() -> None:
         max_steps=args.simulation_steps if args.render else args.episode_steps,
         deterministic=True,
         render=args.render,
+        obs_noise_omega=0.0,
     )
     upright_errors = np.array([info["upright_error"] for info in infos])
     omegas = np.array([info["omega"] for info in infos])

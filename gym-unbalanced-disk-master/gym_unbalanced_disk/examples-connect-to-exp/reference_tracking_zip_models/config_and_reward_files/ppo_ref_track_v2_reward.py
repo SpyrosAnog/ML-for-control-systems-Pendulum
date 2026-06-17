@@ -1,5 +1,5 @@
 # Reward function used to train ppo_ref_track_v2.zip
-# Saved at 2026-06-15T00:51:22
+# Saved at 2026-06-17T22:21:14
 # Weights: {'swing_up': 0.5, 'capture': 12.0, 'top_speed_penalty': 1.0, 'omega_penalty': 0.02, 'action_penalty': 0.002, 'stall_penalty': 0.5}
 
 def external_ref_reward(
