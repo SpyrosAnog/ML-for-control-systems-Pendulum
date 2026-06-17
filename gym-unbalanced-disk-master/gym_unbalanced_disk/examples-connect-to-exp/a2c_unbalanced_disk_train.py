@@ -16,7 +16,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 SEED = 7
 EPISODE_STEPS = 300
 DEFAULT_SIMULATION_STEPS = 1200
-MODEL_PATH = Path("a2c_unbalanced_disk_noise_omega_01")
+MODEL_PATH = Path("unbalanced_disk_zip_models/a2c_unbalanced_disk_noise_omega_01")
 OBS_NOISE_OMEGA = 0.1 # rad/s std dev added to obs[2] during sim training/evaluation
 REWARD_WEIGHTS = {
     "swing_up": 0.5,

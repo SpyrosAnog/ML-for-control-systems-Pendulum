@@ -30,7 +30,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 SEED = 7
 EPISODE_STEPS = 300
 DEFAULT_SIMULATION_STEPS = 1200
-ALGORITHM = "PPO"  # switch to "A2C" to use the original A2C setup
+ALGORITHM = "A2C"  # switch to "A2C" to use the original A2C setup
 OBS_NOISE_OMEGA = 0.1  # rad/s std dev added to obs[2] during sim training
 
 # Reference range: ±15° around the upright (π rad)
@@ -86,8 +86,8 @@ PPO_HYPERPARAMS = {
 }
 
 MODEL_PATHS = {
-    "A2C": Path("a2c_ref_track_v2"),
-    "PPO": Path("ppo_ref_track_noise_01"),
+    "A2C": Path("reference_tracking_zip_models/a2c_ref_track_v1"),
+    "PPO": Path("reference_tracking_zip_models/ppo_ref_track_noise_01"),
 }
 
 
