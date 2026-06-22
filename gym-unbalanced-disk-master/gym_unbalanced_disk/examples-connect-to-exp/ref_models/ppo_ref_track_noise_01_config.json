@@ -1,7 +1,7 @@
 {
-  "saved_at": "2026-06-22T16:39:23",
-  "model_path": "ref_models/a2c_ref_track_v1.zip",
-  "algorithm": "A2C",
+  "saved_at": "2026-06-22T16:43:07",
+  "model_path": "ref_models/ppo_ref_track_noise_01.zip",
+  "algorithm": "PPO",
   "ref_range_deg": 15.0,
   "reward_weights": {
     "swing_up": 0.5,
@@ -27,29 +27,33 @@
   "hyperparameters": {
     "seed": 7,
     "episode_steps": 300,
-    "learning_rate": 0.0007,
-    "n_steps": 32,
+    "learning_rate": 0.0002,
+    "n_steps": 1200,
+    "batch_size": 120,
+    "n_epochs": 8,
     "gamma": 0.99,
     "gae_lambda": 0.95,
+    "clip_range": 0.08,
+    "target_kl": 0.02,
     "vf_coef": 0.5,
     "max_grad_norm": 0.5,
     "net_arch_pi": [
-      64,
-      64
+      128,
+      128
     ],
     "net_arch_vf": [
-      64,
-      64
+      128,
+      128
     ],
-    "entropy_coef": 0.005
+    "entropy_coef": 0.0005
   },
   "training": {
     "total_timesteps": 450000,
-    "training_time_s": 226.9,
-    "steps_per_second": 1983.4
+    "training_time_s": 224.1,
+    "steps_per_second": 2008.4
   },
   "rollout_summary": {
     "selection": "best deterministic validation checkpoint",
-    "checkpoint_sha1": "85b0c404554a"
+    "checkpoint_sha1": "5311359a94cc"
   }
 }

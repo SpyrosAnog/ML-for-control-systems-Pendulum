@@ -1,5 +1,5 @@
-# Reward function used to train ref_models/a2c_ref_track_v1.zip
-# Saved at 2026-06-22T16:39:23
+# Reward function used to train reference_tracking_zip_models/a2c_ref_track_v1.zip
+# Saved at 2026-06-22T11:46:28
 # Weights: {'swing_up': 0.5, 'capture': 12.0, 'top_speed_penalty': 1.0, 'omega_penalty': 0.02, 'action_penalty': 0.002, 'stall_penalty': 0.5}
 
 def external_ref_reward(

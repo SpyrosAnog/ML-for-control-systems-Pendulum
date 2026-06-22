@@ -31,7 +31,7 @@ SEED = 7
 EPISODE_STEPS = 300
 DEFAULT_SIMULATION_STEPS = 1200
 ALGORITHM = "A2C"  # switch to "A2C" to use the original A2C setup
-OBS_NOISE_OMEGA = 0.1  # rad/s std dev added to obs[2] during sim training
+OBS_NOISE_OMEGA = 0.3  # rad/s std dev added to obs[2] during sim training
 
 # Reference range: ±15° around the upright (π rad)
 REF_RANGE_DEG = 15.0
@@ -86,8 +86,8 @@ PPO_HYPERPARAMS = {
 }
 
 MODEL_PATHS = {
-    "A2C": Path("reference_tracking_zip_models/a2c_ref_track_v1"),
-    "PPO": Path("reference_tracking_zip_models/ppo_ref_track_noise_01"),
+    "A2C": Path("ref_models/a2c_ref_track_v1"),
+    "PPO": Path("ref_models/ppo_ref_track_noise_01"),
 }
 
 
@@ -368,11 +368,27 @@ def build_model(env, device: str, entropy_coef: float):
 
 
 def load_model(model_path: Path, device: str):
-    if ALGORITHM.upper() == "PPO":
-        return PPO.load(model_path, device=device)
-    if ALGORITHM.upper() == "A2C":
-        return A2C.load(model_path, device=device)
-    raise ValueError(f"Unsupported algorithm: {ALGORITHM}")
+    algorithm = ALGORITHM.upper()
+    model_class = {"PPO": PPO, "A2C": A2C}.get(algorithm)
+    if model_class is None:
+        raise ValueError(f"Unsupported algorithm: {ALGORITHM}")
+
+    try:
+        return model_class.load(model_path, device=device)
+    except (ModuleNotFoundError, ValueError, AttributeError) as exc:
+        print(f"Standard model loading failed: {exc}")
+        print("Retrying with compatibility overrides for saved NumPy/SB3 metadata.")
+        return model_class.load(
+            model_path,
+            device=device,
+            custom_objects={
+                "action_noise": None,
+                "_last_obs": None,
+                "_last_episode_starts": None,
+                "ep_info_buffer": None,
+                "ep_success_buffer": None,
+            },
+        )
 
 
 def rollout(
