@@ -1,0 +1,14 @@
+{
+  "validation_prediction_rmse_rad": 0.008819349110126495,
+  "validation_prediction_rmse_deg": 0.5053114820627065,
+  "validation_simulation_rmse_rad_including_init": 0.024713353223307977,
+  "validation_simulation_rmse_deg_including_init": 1.415970837311576,
+  "validation_simulation_rmse_rad_after_init": 0.024952135128926734,
+  "validation_simulation_rmse_deg_after_init": 1.4296520327276223,
+  "test_prediction_rmse_rad": 0.01453094556927681,
+  "test_prediction_rmse_deg": 0.8325618534538846,
+  "test_simulation_rmse_rad_including_init": 0.04057248409539505,
+  "test_simulation_rmse_deg_including_init": 2.324632103027794,
+  "test_simulation_rmse_rad_after_init": 0.04096449787759795,
+  "test_simulation_rmse_deg_after_init": 2.347092838258981
+}
