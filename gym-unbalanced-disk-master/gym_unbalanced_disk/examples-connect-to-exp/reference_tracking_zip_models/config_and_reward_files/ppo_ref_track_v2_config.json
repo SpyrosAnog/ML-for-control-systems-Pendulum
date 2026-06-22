@@ -1,0 +1,63 @@
+{
+  "saved_at": "2026-06-17T22:21:14",
+  "model_path": "ppo_ref_track_v2.zip",
+  "algorithm": "PPO",
+  "ref_range_deg": 15.0,
+  "reward_weights": {
+    "swing_up": 0.5,
+    "capture": 12.0,
+    "top_speed_penalty": 1.0,
+    "omega_penalty": 0.02,
+    "action_penalty": 0.002,
+    "stall_penalty": 0.5
+  },
+  "reward_params": {
+    "balance_sigma_angle": 0.15,
+    "balance_sigma_omega": 1.5,
+    "top_gate_sigma": 0.25,
+    "top_speed_sigma": 8.0,
+    "omega_penalty_denom": 10.0,
+    "stall_omega_sigma": 0.75
+  },
+  "reward_function": "def external_ref_reward(\n    theta: float, omega: float, action: float, umax: float, theta_ref: float\n) -> float:\n    \"\"\"Reward for reference tracking.\n\n    theta_ref is the target angle for this episode (\u03c0 \u00b1 up to 15\u00b0).\n    The swing-up term still uses raw height so the policy climbs from the bottom.\n    The capture / speed terms are centred on theta_ref so the policy settles there.\n    \"\"\"\n    theta_wrapped = wrap_angle(theta)\n\n    # General height reward \u2014 same as swing-up policy, reference-agnostic\n    # Keeps pushing the pendulum toward the top region during swing-up\n    swing_up_reward = ((1.0 - np.cos(theta_wrapped)) / 2.0) ** 2\n\n    # Deviation from the reference (0 when exactly at theta_ref)\n    ref_error = abs(wrap_angle(theta - theta_ref))\n\n    # Capture bonus: rewards being near theta_ref AND slow\n    top_gate      = np.exp(-(ref_error**2) / (2 * REWARD_PARAMS[\"top_gate_sigma\"]**2))\n    capture_bonus = (np.exp(-(ref_error**2) / (2 * REWARD_PARAMS[\"balance_sigma_angle\"]**2))\n                     * np.exp(-(omega**2) / (2 * REWARD_PARAMS[\"balance_sigma_omega\"]**2)))\n\n    top_speed_penalty = top_gate * (omega / REWARD_PARAMS[\"top_speed_sigma\"]) ** 2\n    omega_penalty     = (omega / REWARD_PARAMS[\"omega_penalty_denom\"]) ** 2\n    action_penalty    = (action / umax) ** 2\n\n    # Stall penalty uses distance from \u03c0 (not theta_ref) to force swing-up\n    upright_error = np.pi - abs(theta_wrapped)\n    stall_penalty = (np.exp(-(omega**2) / (2 * REWARD_PARAMS[\"stall_omega_sigma\"]**2))\n                     * (upright_error / np.pi) ** 2)\n\n    return (\n        REWARD_WEIGHTS[\"swing_up\"]             * swing_up_reward\n        + REWARD_WEIGHTS[\"capture\"]            * capture_bonus\n        - REWARD_WEIGHTS[\"top_speed_penalty\"]  * top_speed_penalty\n        - REWARD_WEIGHTS[\"omega_penalty\"]      * omega_penalty\n        - REWARD_WEIGHTS[\"action_penalty\"]     * action_penalty\n        - REWARD_WEIGHTS[\"stall_penalty\"]      * stall_penalty\n    )\n",
+  "robustness": {
+    "action_delay": 0,
+    "obs_noise_omega": 0.0
+  },
+  "hyperparameters": {
+    "seed": 7,
+    "episode_steps": 300,
+    "learning_rate": 0.0002,
+    "n_steps": 1200,
+    "batch_size": 120,
+    "n_epochs": 8,
+    "gamma": 0.99,
+    "gae_lambda": 0.95,
+    "clip_range": 0.08,
+    "target_kl": 0.02,
+    "vf_coef": 0.5,
+    "max_grad_norm": 0.5,
+    "net_arch_pi": [
+      128,
+      128
+    ],
+    "net_arch_vf": [
+      128,
+      128
+    ],
+    "entropy_coef": 0.0005
+  },
+  "training": {
+    "total_timesteps": 450000,
+    "training_time_s": 186.6,
+    "steps_per_second": 2411.6
+  },
+  "rollout_summary": {
+    "steps": 300,
+    "external_return": 2983.28,
+    "mean_ref_error_deg": 20.923,
+    "final_ref_error_deg": 2.159,
+    "max_omega_rad_s": 17.412,
+    "max_action_V": 3.0
+  }
+}

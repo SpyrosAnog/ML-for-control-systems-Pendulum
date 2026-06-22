@@ -36,6 +36,8 @@ raw_env = gym.make("unbalanced-disk-v0", disable_env_checker=True).unwrapped
 env = OldGymToGymnasiumWrapper(raw_env)
 
 obs, info = env.reset(seed=0)
+print("Observation space:", env.observation_space)
+print("Action space:", env.action_space)
 print("Initial observation:", obs)
 
 for k in range(200):
