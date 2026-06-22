@@ -1,0 +1,19 @@
+{
+  "config": {
+    "na": 6,
+    "nb": 2,
+    "hidden_size": 32,
+    "epochs": 6000,
+    "learning_rate": 0.001,
+    "patience": 100,
+    "seed": 7
+  },
+  "validation_prediction_rmse_rad": 0.0033021297176176532,
+  "validation_prediction_rmse_deg": 0.18919809622421788,
+  "validation_simulation_rmse_rad": 0.05465347088340692,
+  "validation_simulation_rmse_deg": 3.1314132173603473,
+  "test_prediction_rmse_rad": 0.003524163174448613,
+  "test_prediction_rmse_deg": 0.201919676211332,
+  "test_simulation_rmse_rad": 0.036487771952350985,
+  "test_simulation_rmse_deg": 2.0905953367055314
+}
